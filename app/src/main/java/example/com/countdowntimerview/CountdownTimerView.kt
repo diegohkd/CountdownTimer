@@ -5,8 +5,10 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.os.CountDownTimer
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
 
 class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
 
@@ -25,11 +27,12 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     private val defaultCornerRadiusDp: Float = 16f
     private var defaultBackgroundColor = Color.GREEN
     private var defaultTextColor = Color.WHITE
-    private var defaultTextSizeSp = 32f
+    private var defaultTextSizeSp = 64f
 
     // endregion
 
-    private var initialTime = 0
+    private var countDownTimer: CountDownTimer? = null
+    private var initialTime = 10
     private var currentTime = 0
 
     init {
@@ -53,11 +56,26 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
         drawNumberText(canvas, canvasWidth, canvasHeight)
     }
 
+    fun start() {
+        currentTime = initialTime
+        countDownTimer = object : CountDownTimer(currentTime * 1000L, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                if (millisUntilFinished < (currentTime - 1) * 1000) // ignore first tick
+                    decrementTime()
+            }
+
+            override fun onFinish() {
+                decrementTime()
+            }
+        }.start()
+    }
+
     // region private
 
     private fun setupView() {
         setupBackground()
         setupNumberText()
+        setupTimer()
     }
 
     private fun setupBackground() {
@@ -70,6 +88,10 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     private fun setupNumberText() {
         numberPaint.color = defaultTextColor
         numberPaint.textSize = (defaultTextSizeSp * resources.displayMetrics.scaledDensity)
+    }
+
+    private fun setupTimer() {
+        currentTime = initialTime
     }
 
     private fun calculateMeasuredWidthCanvas(widthMeasureSpec: Int): Int {
@@ -114,6 +136,21 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
         val textY = (canvasHeight / 2 - (numberPaint.descent() + numberPaint.ascent()) / 2)
         // Draw
         canvas.drawText(displayedCount, textX, textY, numberPaint)
+    }
+
+    private fun decrementTime() {
+        currentTime--
+
+        backgroundPaint.color = when (currentTime) {
+            0 -> ContextCompat.getColor(context, R.color.red)
+            1 -> ContextCompat.getColor(context, R.color.red1)
+            2 -> ContextCompat.getColor(context, R.color.red2)
+            3 -> ContextCompat.getColor(context, R.color.red3)
+            4 -> ContextCompat.getColor(context, R.color.red4)
+            else -> customBackgroundColor
+        }
+
+        invalidate()
     }
 
     // endregion
