@@ -14,6 +14,7 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
 
     private val backgroundRect: RectF by lazy { RectF() }
     private val backgroundPaint: Paint by lazy { Paint(Paint.ANTI_ALIAS_FLAG) }
+    private val numberPaint: Paint by lazy { Paint(Paint.ANTI_ALIAS_FLAG) }
     private var cornerRadiusPx: Float = 0f
     private var customBackgroundColor = Color.GREEN
 
@@ -21,10 +22,15 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
 
     // region default values
 
-    private val defaultCornerRadiusDp: Float = 0f
+    private val defaultCornerRadiusDp: Float = 16f
     private var defaultBackgroundColor = Color.GREEN
+    private var defaultTextColor = Color.WHITE
+    private var defaultTextSizeSp = 32f
 
     // endregion
+
+    private var initialTime = 0
+    private var currentTime = 0
 
     init {
         setupView()
@@ -44,12 +50,14 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
         val canvasHeight = height.toFloat()
 
         drawBackground(canvas, canvasWidth, canvasHeight)
+        drawNumberText(canvas, canvasWidth, canvasHeight)
     }
 
     // region private
 
     private fun setupView() {
         setupBackground()
+        setupNumberText()
     }
 
     private fun setupBackground() {
@@ -59,15 +67,30 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
         backgroundPaint.color = customBackgroundColor
     }
 
+    private fun setupNumberText() {
+        numberPaint.color = defaultTextColor
+        numberPaint.textSize = (defaultTextSizeSp * resources.displayMetrics.scaledDensity)
+    }
+
     private fun calculateMeasuredWidthCanvas(widthMeasureSpec: Int): Int {
-        val desiredWidth = 0
+        // Measure maximum possible width of text
+        val maxTextWidth = numberPaint.measureText(initialTime.toString())
+
+        // Add padding to maximum width calculation
+        val desiredWidth = (maxTextWidth + paddingLeft + paddingRight).toInt()
 
         // Reconcile size that this view wants to be with the size the parent will let it be.
         return resolveSize(desiredWidth, widthMeasureSpec)
     }
 
     private fun calculateMeasuredHeightCanvas(heightMeasureSpec: Int): Int {
-        val desiredHeight = 0
+        val fontMetrics = numberPaint.fontMetrics
+
+        // Estimate maximum possible height of text
+        val maxTextHeight = -fontMetrics.top + fontMetrics.bottom
+
+        // Add padding to maximum height calculation
+        val desiredHeight = (maxTextHeight + paddingTop + paddingBottom).toInt()
 
         // Reconcile size that this view wants to be with the size the parent will let it be.
         return resolveSize(desiredHeight, heightMeasureSpec)
@@ -76,6 +99,21 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     private fun drawBackground(canvas: Canvas, canvasWidth: Float, canvasHeight: Float) {
         backgroundRect.set(0f, 0f, canvasWidth, canvasHeight)
         canvas.drawRoundRect(backgroundRect, cornerRadiusPx, cornerRadiusPx, backgroundPaint)
+    }
+
+    private fun drawNumberText(canvas: Canvas, canvasWidth: Float, canvasHeight: Float) {
+        val displayedCount = currentTime.toString()
+
+        // Measure the width of text to display
+        val centerX = canvasWidth / 2
+        val textWidth = numberPaint.measureText(displayedCount)
+
+        // Figure out an x-coordinate that will center the text in the canvas
+        val textX = (centerX - textWidth / 2).toInt().toFloat()
+        // Figure out an y-coordinate that will center the text in the canvas
+        val textY = (canvasHeight / 2 - (numberPaint.descent() + numberPaint.ascent()) / 2)
+        // Draw
+        canvas.drawText(displayedCount, textX, textY, numberPaint)
     }
 
     // endregion
