@@ -70,6 +70,10 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
         }.start()
     }
 
+    fun stop() {
+        countDownTimer?.cancel()
+    }
+
     // region private
 
     private fun setupView() {
