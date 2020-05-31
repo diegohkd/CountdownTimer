@@ -8,6 +8,8 @@ import android.graphics.RectF
 import android.os.CountDownTimer
 import android.util.AttributeSet
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import androidx.core.content.ContextCompat
 
 class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
@@ -28,6 +30,14 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     private var defaultBackgroundColor = Color.GREEN
     private var defaultTextColor = Color.WHITE
     private var defaultTextSizeSp = 64f
+
+    // endregion
+
+    // region animation
+
+    private val bounceAnimation: Animation by lazy {
+        AnimationUtils.loadAnimation(context, R.anim.cycle_bounce)
+    }
 
     // endregion
 
@@ -152,6 +162,9 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
             3 -> ContextCompat.getColor(context, R.color.red3)
             4 -> ContextCompat.getColor(context, R.color.red4)
             else -> customBackgroundColor
+        }
+        if (currentTime < 5) {
+            startAnimation(bounceAnimation)
         }
 
         invalidate()
