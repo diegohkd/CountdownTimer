@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.media.SoundPool
 import android.os.CountDownTimer
 import android.util.AttributeSet
 import android.view.View
@@ -38,6 +39,14 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     private val bounceAnimation: Animation by lazy {
         AnimationUtils.loadAnimation(context, R.anim.cycle_bounce)
     }
+
+    // endregion
+
+    // region sound effects
+
+    private var soundPool: SoundPool? = null
+    private var countdownSoundId: Int? = null
+    private var buzzSoundId: Int? = null
 
     // endregion
 
@@ -90,6 +99,7 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
         setupBackground()
         setupNumberText()
         setupTimer()
+        setupSoundEffects()
     }
 
     private fun setupBackground() {
@@ -106,6 +116,12 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
 
     private fun setupTimer() {
         currentTime = initialTime
+    }
+
+    private fun setupSoundEffects() {
+        soundPool = SoundPool.Builder().setMaxStreams(2).build()
+        countdownSoundId = soundPool?.load(context, R.raw.sound_countdown, 0)
+        buzzSoundId = soundPool?.load(context, R.raw.sound_buzz, 0)
     }
 
     private fun calculateMeasuredWidthCanvas(widthMeasureSpec: Int): Int {
@@ -163,11 +179,21 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
             4 -> ContextCompat.getColor(context, R.color.red4)
             else -> customBackgroundColor
         }
+
         if (currentTime < 5) {
+            if (currentTime > 0) {
+                countdownSoundId?.let(::playSound)
+            } else {
+                buzzSoundId?.let(::playSound)
+            }
             startAnimation(bounceAnimation)
         }
 
         invalidate()
+    }
+
+    private fun playSound(soundId: Int) {
+        soundPool?.play(soundId, 1f, 1f, 1, 0, 1f)
     }
 
     // endregion
