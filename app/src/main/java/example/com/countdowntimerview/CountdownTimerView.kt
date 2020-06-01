@@ -119,9 +119,11 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     }
 
     private fun setupSoundEffects() {
-        soundPool = SoundPool.Builder().setMaxStreams(2).build()
-        countdownSoundId = soundPool?.load(context, R.raw.sound_countdown, 0)
-        buzzSoundId = soundPool?.load(context, R.raw.sound_buzz, 0)
+        if (!isInEditMode) {
+            soundPool = SoundPool.Builder().setMaxStreams(2).build()
+            countdownSoundId = soundPool?.load(context, R.raw.sound_countdown, 0)
+            buzzSoundId = soundPool?.load(context, R.raw.sound_buzz, 0)
+        }
     }
 
     private fun calculateMeasuredWidthCanvas(widthMeasureSpec: Int): Int {
