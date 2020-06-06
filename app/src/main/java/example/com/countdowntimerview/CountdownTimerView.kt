@@ -1,6 +1,7 @@
 package example.com.countdowntimerview
 
 import android.content.Context
+import android.content.res.TypedArray
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -8,12 +9,13 @@ import android.graphics.RectF
 import android.media.SoundPool
 import android.os.CountDownTimer
 import android.util.AttributeSet
-import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 
-class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
+class CountdownTimerView(context: Context, attrs: AttributeSet? = null) :
+    LinearLayout(context, attrs) {
 
     // region draw properties
 
@@ -27,10 +29,10 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
 
     // region default values
 
-    private val defaultCornerRadiusDp: Float = 16f
+    private val defaultCornerRadiusDp: Float = 0f
     private var defaultBackgroundColor = Color.GREEN
     private var defaultTextColor = Color.WHITE
-    private var defaultTextSizeSp = 64f
+    private var defaultTextSizeSp = 12f
 
     // endregion
 
@@ -51,11 +53,12 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     // endregion
 
     private var countDownTimer: CountDownTimer? = null
-    private var initialTime = 10
+    private var isExecuting = false
+    private var initialTime = 0
     private var currentTime = 0
 
     init {
-        setupView()
+        setupView(attrs)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -76,6 +79,8 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
     }
 
     fun start() {
+        if (isExecuting) return
+        isExecuting = true
         currentTime = initialTime
         countDownTimer = object : CountDownTimer(currentTime * 1000L, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -85,44 +90,81 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
 
             override fun onFinish() {
                 decrementTime()
+                isExecuting = false
             }
         }.start()
     }
 
     fun stop() {
         countDownTimer?.cancel()
+        isExecuting = false
     }
 
     // region private
 
-    private fun setupView() {
-        setupBackground()
-        setupNumberText()
-        setupTimer()
-        setupSoundEffects()
+    private fun setupView(attrs: AttributeSet?) {
+        val typedArray = attrs?.let {
+            context.obtainStyledAttributes(it, R.styleable.CountdownTimerView)
+        }
+
+        setupBackground(typedArray)
+        setupNumberText(typedArray)
+        setupTimer(typedArray)
+        setupSoundEffects(typedArray)
+
+        typedArray?.recycle()
     }
 
-    private fun setupBackground() {
+    private fun setupBackground(typedArray: TypedArray?) {
         cornerRadiusPx = (defaultCornerRadiusDp * resources.displayMetrics.density).round()
         customBackgroundColor = defaultBackgroundColor
 
+        typedArray?.run {
+            cornerRadiusPx =
+                getDimension(R.styleable.CountdownTimerView_cdt_cornerRadius, cornerRadiusPx)
+            customBackgroundColor =
+                getColor(R.styleable.CountdownTimerView_cdt_backgroundColor, defaultBackgroundColor)
+        }
         backgroundPaint.color = customBackgroundColor
     }
 
-    private fun setupNumberText() {
-        numberPaint.color = defaultTextColor
-        numberPaint.textSize = (defaultTextSizeSp * resources.displayMetrics.scaledDensity)
+    private fun setupNumberText(typedArray: TypedArray?) {
+        var textColor = defaultTextColor
+        var textSize = (defaultTextSizeSp * resources.displayMetrics.scaledDensity)
+
+        typedArray?.run {
+            textColor = getColor(R.styleable.CountdownTimerView_android_textColor, defaultTextColor)
+            textSize = getDimension(R.styleable.CountdownTimerView_android_textSize, textSize)
+        }
+
+        numberPaint.color = textColor
+        numberPaint.textSize = textSize
     }
 
-    private fun setupTimer() {
+    private fun setupTimer(typedArray: TypedArray?) {
+        typedArray?.run {
+            initialTime = getInt(R.styleable.CountdownTimerView_cdt_initialTime, initialTime)
+        }
         currentTime = initialTime
     }
 
-    private fun setupSoundEffects() {
+    private fun setupSoundEffects(typedArray: TypedArray?) {
         if (!isInEditMode) {
-            soundPool = SoundPool.Builder().setMaxStreams(2).build()
-            countdownSoundId = soundPool?.load(context, R.raw.sound_countdown, 0)
-            buzzSoundId = soundPool?.load(context, R.raw.sound_buzz, 0)
+            var countdownSoundRes: Int? = null
+            var countdownFinishedSoundRes: Int? = null
+            typedArray?.run {
+                countdownSoundRes =
+                    getResourceIdOrNull(R.styleable.CountdownTimerView_cdt_countdownSoundSrc)
+                countdownFinishedSoundRes =
+                    getResourceIdOrNull(R.styleable.CountdownTimerView_cdt_countdownFinishedSoundSrc)
+            }
+            if (countdownSoundRes == null && countdownFinishedSoundRes == null) {
+                return
+            } else {
+                soundPool = SoundPool.Builder().setMaxStreams(2).build()
+                countdownSoundId = countdownSoundRes?.let { soundPool?.load(context, it, 0) }
+                buzzSoundId = countdownFinishedSoundRes?.let { soundPool?.load(context, it, 0) }
+            }
         }
     }
 
@@ -190,7 +232,6 @@ class CountdownTimerView(context: Context, attrs: AttributeSet? = null) : View(c
             }
             startAnimation(bounceAnimation)
         }
-
         invalidate()
     }
 

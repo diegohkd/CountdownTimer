@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CountdownTimerView">
+        <attr name="cdt_cornerRadius" format="dimension" />
+        <attr name="cdt_backgroundColor" format="color" />
+        <attr name="cdt_initialTime" format="integer" />
+        <attr name="cdt_countdownSoundSrc" format="reference" />
+        <attr name="cdt_countdownFinishedSoundSrc" format="reference" />
+        <attr name="android:textColor" />
+        <attr name="android:textSize" />
+    </declare-styleable>
+</resources>
